@@ -54,9 +54,9 @@ list(REMOVE_DUPLICATES ${LIBNAME}_LIBRARIES)
 ######################################
 #export the library - this is picked up and used by the chunk of
 #script at the end of the top level CMakeLists.txt file
-cache_internal_append_unique(PROJECT_EXPORT_LIBS 
-    ${LIBNAME}
-)
+# cache_internal_append_unique(PROJECT_EXPORT_LIBS 
+#     ${LIBNAME}
+# )
 
 
 

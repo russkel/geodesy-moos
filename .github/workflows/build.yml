@@ -1,0 +1,63 @@
+name: build MOOSGeodesy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+
+    - uses: actions/checkout@v2
+
+    - name: cmake
+      run: |
+        mkdir -p build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+    - name: make
+      run: cd build && make
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+
+    - name: package
+      run: |
+        cd build
+        rm -rf artifacts && mkdir artifacts
+        cpack -G DEB -D CPACK_OUTPUT_FILE_PREFIX=artifacts
+        dpkg -I artifacts/*.deb
+        dpkg --contents artifacts/*.deb
+    - uses: actions/upload-artifact@v1
+      with:
+        name: deb
+        path: build/artifacts
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download deb from build
+      uses: actions/download-artifact@v1
+      with:
+        name: deb
+    - name: Get File Name
+      id: get_filename
+      run: |
+        cd deb
+        echo "::set-output name=short_sha::`echo ${GITHUB_SHA} | cut -c1-8`"
+    - name: Create Release
+      id: create_release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: MOOSGeodesy snapshot-${{ steps.get_filename.outputs.short_sha }}
+        draft: false
+        files: deb/*.deb

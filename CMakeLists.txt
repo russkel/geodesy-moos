@@ -5,14 +5,12 @@
 ###########################################################
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+project(MOOSGeodesy VERSION 10.5.0)
 
 if(COMMAND cmake_policy)
    cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
-
-set(PROJECTNAME MOOSGeodesy)
-project(${PROJECTNAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
@@ -29,8 +27,8 @@ include(EnableAllWarnings)
 # Bring in helper functions for dealing with CACHE INTERNAL variables
 include(CacheInternalHelpers)
 
-# We want to create dynamic libraries
-set(BUILD_SHARED_LIBS true)
+# Do we want to create dynamic libraries?
+option(BUILD_SHARED_LIBS "Build MOOSGeodesy as a shared library" OFF)
 
 # Enable Doxygen build with 'make doxygen'
 option(ENABLE_DOXYGEN "Enable a 'make doc' target for Doxygen documentation")
@@ -71,10 +69,10 @@ if (PROJECT_EXPORT_LIBS)
     export(TARGETS
         ${PROJECT_EXPORT_LIBS}
         FILE
-        Use${PROJECTNAME}.cmake
+        Use${CMAKE_PROJECT_NAME}.cmake
     )
 
-    set(CONFIG_FILE "${PROJECT_BINARY_DIR}/${PROJECTNAME}Config.cmake")
+    set(CONFIG_FILE "${PROJECT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake")
     configure_file( "cmake/ProjectConfig.cmake.in" ${CONFIG_FILE} @ONLY )
     
     # Append libary specific lines to the generated config script
@@ -91,9 +89,18 @@ endif()
 
 # Stick build location in the central CMake user package registry, so that it may be easily found
 if ("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" GREATER 2.7)
-  export(PACKAGE ${PROJECTNAME})
+  export(PACKAGE ${CMAKE_PROJECT_NAME})
 endif()
 
 endif()
 
+execute_process(COMMAND lsb_release -cs
+    OUTPUT_VARIABLE RELEASE_CODENAME
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
+set(CPACK_PACKAGE_CONTACT "russ@rw.id.au")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_SYSTEM_NAME "${RELEASE_CODENAME}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+include(CPack)
